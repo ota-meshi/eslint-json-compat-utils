@@ -12,27 +12,21 @@ import { newProxyWithProperties } from "./lib/new-proxy";
 export type LazyRuleContext = {
   report(descriptor: any): void;
 };
-export type LazyCreate<C extends LazyRuleContext> = (
-  context: C,
-  ...args: any[]
-) => any;
+export type LazyCreate = (context: any, ...args: any[]) => any;
 
-const CONVERTED = new WeakMap<LazyCreate<any>, LazyCreate<any>>();
+const CONVERTED = new WeakMap<LazyCreate, LazyCreate>();
 
 /**
  * This is a helper function that converts the given create function into `@eslint/json` compatible create function.
  */
-export function toCompatCreate<
-  C extends LazyRuleContext,
-  F extends LazyCreate<C>,
->(create: F): F {
+export function toCompatCreate<F extends LazyCreate>(create: F): F {
   if (CONVERTED.has(create)) {
     return CONVERTED.get(create) as F;
   }
   const result = (context: Rule.RuleContext, ...args: []) => {
     const originalSourceCode = context.sourceCode;
     if (!originalSourceCode || !isJSONSourceCode(originalSourceCode)) {
-      return create(context as never, ...args);
+      return create(context, ...args);
     }
 
     let sourceCode;
