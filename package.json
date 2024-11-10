@@ -49,6 +49,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "esquery": "^1.6.0"
+  },
   "peerDependenciesMeta": {
     "@eslint/json": {
       "optional": true
@@ -65,6 +68,7 @@
     "@ota-meshi/eslint-plugin": "^0.17.5",
     "@svitejs/changesets-changelog-github-compact": "^1.1.0",
     "@types/eslint": "^9.0.0",
+    "@types/esquery": "^1.5.4",
     "@types/mocha": "^10.0.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.5.8",
