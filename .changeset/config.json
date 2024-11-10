@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config/schema.json",
+  "changelog": [
+    "@svitejs/changesets-changelog-github-compact",
+    {
+      "repo": "ota-meshi/eslint-json-compat-utils"
+    }
+  ],
+  "commit": false,
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "bumpVersionsWithWorkspaceProtocolOnly": true,
+  "ignore": []
+}
