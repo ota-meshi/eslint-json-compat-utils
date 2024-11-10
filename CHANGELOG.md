@@ -1,5 +1,11 @@
 # eslint-json-compat-utils
 
+## 0.2.1
+
+### Patch Changes
+
+- fix: crash with JSON5 unofficial static nodes ([#13](https://github.com/ota-meshi/eslint-json-compat-utils/pull/13))
+
 ## 0.2.0
 
 ### Minor Changes
