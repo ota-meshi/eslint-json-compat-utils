@@ -28,7 +28,6 @@
     "eslint-fix": "eslint . --fix",
     "test:cover": "nyc --reporter=lcov npm run test",
     "test": "npm run mocha -- \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
-    "update:extract-v6-props": "npm run ts -- tools/extract-v6-props.ts",
     "ts": "node -r esbuild-register",
     "mocha": "npm run ts -- ./node_modules/mocha/bin/mocha.js",
     "prerelease": "npm run clean && npm run build",
