@@ -3,7 +3,7 @@ import type { LazyCreate } from "./to-compat-create";
 import { toCompatCreate } from "./to-compat-create";
 
 export type LazyRuleModule = {
-  create: LazyCreate<any>;
+  create: LazyCreate;
   meta?: Rule.RuleMetaData;
 };
 
