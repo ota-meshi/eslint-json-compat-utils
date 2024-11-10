@@ -1,3 +1,4 @@
+import { newProxyWithProperties, newProxyWithGet } from "./lib/new-proxy";
 import type { LazyRuleModule } from "./to-compat-rule";
 import { toCompatRule } from "./to-compat-rule";
 
@@ -17,19 +18,12 @@ export function toCompatPlugin<P extends LazyPlugin>(plugin: P): P {
   if (CONVERTED.has(plugin)) {
     return CONVERTED.get(plugin) as P;
   }
-  const rules = new Proxy(plugin.rules, {
-    get(target, prop) {
-      const rule = Reflect.get(target, prop);
-      return rule && toCompatRule(rule);
-    },
+  const rules = newProxyWithGet(plugin.rules, (target, prop) => {
+    const rule = Reflect.get(target, prop);
+    return rule && toCompatRule(rule);
   });
-  const result: P = new Proxy(plugin, {
-    get(target, prop) {
-      if (prop === "rules") {
-        return rules;
-      }
-      return Reflect.get(target, prop);
-    },
+  const result: P = newProxyWithProperties(plugin, {
+    rules,
   });
   CONVERTED.set(plugin, result);
   return result;

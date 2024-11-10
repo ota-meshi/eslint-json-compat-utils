@@ -17,7 +17,19 @@ describe("toCompatCreate", () => {
                 create: toCompatCreate((context: Rule.RuleContext) => {
                   return {
                     JSONArrayExpression(node: AST.JSONArrayExpression) {
-                      context.report({ node: node as any, message: "Foo" });
+                      context.report({
+                        loc: node.loc,
+                        message: node?.type,
+                      });
+                    },
+                    JSONObjectExpression(node: AST.JSONObjectExpression) {
+                      const token = context.sourceCode.getFirstToken(
+                        node as any,
+                      )!;
+                      context.report({
+                        loc: token.loc,
+                        message: token?.value,
+                      });
                     },
                   };
                 }),
@@ -32,14 +44,18 @@ describe("toCompatCreate", () => {
       },
       overrideConfigFile: true,
     });
-    const [result] = await eslint.lintText("[1,2,3]");
+    const [result] = await eslint.lintText("[1,{}]");
 
     assert.deepStrictEqual(
-      result.messages.map((m) => ({ message: m.message, ruleId: m.ruleId })),
+      result.messages.map((m) => ({
+        message: m.message,
+      })),
       [
         {
-          message: "Foo",
-          ruleId: "test/test",
+          message: "JSONArrayExpression",
+        },
+        {
+          message: "{",
         },
       ],
     );
