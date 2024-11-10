@@ -7,6 +7,7 @@ import {
 } from "./lib/location-converter";
 import { toCompatRuleListener } from "./to-compat-rule-listener";
 import type { RuleListener } from "jsonc-eslint-parser";
+import { newProxyWithProperties } from "./lib/new-proxy";
 
 export type LazyRuleContext = {
   report(descriptor: any): void;
@@ -35,19 +36,16 @@ export function toCompatCreate<
     }
 
     let sourceCode;
-    const compatContext: Rule.RuleContext = {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- special
-      // @ts-expect-error
-      __proto__: context,
+    const compatContext: Rule.RuleContext = newProxyWithProperties(context, {
       get sourceCode() {
         return (sourceCode ??= convertJsoncSourceCode(originalSourceCode));
       },
-      report(descriptor) {
+      report(descriptor: Rule.ReportDescriptor): void {
         // Revert to `@eslint/json` report position (1-based column).
         const momoaDescriptor = {
           ...descriptor,
         };
-        if ("loc" in momoaDescriptor) {
+        if ("loc" in momoaDescriptor && momoaDescriptor.loc) {
           if ("line" in momoaDescriptor.loc) {
             momoaDescriptor.loc = convertPositionFromJsoncToJson(
               momoaDescriptor.loc,
@@ -58,7 +56,7 @@ export function toCompatCreate<
             );
           }
         }
-        if ("node" in momoaDescriptor) {
+        if ("node" in momoaDescriptor && momoaDescriptor.node) {
           momoaDescriptor.node = {
             ...momoaDescriptor.node,
             loc: convertSourceLocationFromJsoncToJson(
@@ -68,7 +66,7 @@ export function toCompatCreate<
         }
         context.report(momoaDescriptor);
       },
-    };
+    });
 
     return toCompatRuleListener(
       create(compatContext as never, ...args) as RuleListener,

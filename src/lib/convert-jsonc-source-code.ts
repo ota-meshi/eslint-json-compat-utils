@@ -2,6 +2,7 @@ import type { JSONSourceCode } from "@eslint/json";
 import { SourceCode } from "eslint";
 import { VisitorKeys } from "jsonc-eslint-parser";
 import { getNodeConverter } from "./node-converter";
+import { newProxyWithGet, proxyReflectValue } from "./new-proxy";
 
 /**
  * This is a helper function that converts the JSONSourceCode to a sourceCode for JSONC.
@@ -17,18 +18,16 @@ export function convertJsoncSourceCode(
     visitorKeys: VisitorKeys,
   });
 
-  const compatSourceCode: SourceCode | JSONSourceCode = new Proxy(
+  const compatSourceCode: SourceCode | JSONSourceCode = newProxyWithGet(
     jsonSourceCode,
-    {
-      get(_target, prop) {
-        const value = Reflect.get(jsSourceCode, prop);
-        if (value !== undefined)
-          return typeof value === "function" ? value.bind(jsSourceCode) : value;
-        const momoaValue = Reflect.get(jsonSourceCode, prop);
-        return typeof momoaValue === "function"
-          ? momoaValue.bind(jsonSourceCode)
-          : momoaValue;
-      },
+    (target, prop, receiver) => {
+      const value = proxyReflectValue(
+        Reflect.get(jsSourceCode, prop),
+        jsSourceCode,
+        target,
+      );
+      if (value !== undefined) return value;
+      return Reflect.get(jsonSourceCode, prop, receiver);
     },
   );
 
