@@ -21,7 +21,9 @@ export function toCompatRuleListener(
   for (const [key, fn] of Object.entries(ruleListener)) {
     if (!fn) continue;
     queries.add(key);
-    const { query, match } = convertQuery(key);
+    const convertedQuery = convertQuery(key);
+    if (!convertedQuery) continue;
+    const { query, match } = convertedQuery;
     queries.add(query);
     let jsoncNodeVisitorList = jsoncNodeVisitors.get(query);
     if (!jsoncNodeVisitorList) {

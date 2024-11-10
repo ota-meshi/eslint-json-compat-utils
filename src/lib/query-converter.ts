@@ -23,36 +23,43 @@ const reIsSimpleNodeQuery = /^[a-z]+$/iu;
 /**
  * This is a helper function that converts the given node query to a node query that `@eslint/json` nodes.
  */
-export function convertQuery(eslintQuery: string): QueryInfo {
+export function convertQuery(eslintQuery: string): QueryInfo | null {
   const exit = eslintQuery.endsWith(":exit");
   const query = exit ? eslintQuery.slice(0, -5) : eslintQuery;
   const converted = convertRawQuery(query);
-  return exit
-    ? {
-        query: `${converted.query}:exit`,
-        match: converted.match,
-      }
-    : converted;
+  return (
+    converted &&
+    (exit
+      ? {
+          query: `${converted.query}:exit`,
+          match: converted.match,
+        }
+      : converted)
+  );
 }
 
 /**
  * Converts the given query to a query that `@eslint/json` nodes.
  */
-function convertRawQuery(query: string): QueryInfo {
+function convertRawQuery(query: string): QueryInfo | null {
   const queries = query.split(",").map((q) => q.trim());
   if (queries.every((q) => reIsSimpleNodeQuery.test(q))) {
-    const nodes = new Set(queries);
+    const convertTargetNodes = new Set(queries);
     const convertedQueries: string[] = [];
-    for (const node of nodes) {
-      const converted = NODE_TYPE_MAP.get(node) || "";
+    for (const node of queries) {
+      const converted = NODE_TYPE_MAP.get(node);
       if (converted) {
         convertedQueries.push(...converted);
+      } else {
+        convertTargetNodes.delete(node);
       }
     }
-    return {
-      query: convertedQueries.join(","),
-      match: (node) => nodes.has(node.type),
-    };
+    return convertedQueries.length
+      ? {
+          query: convertedQueries.join(","),
+          match: (node) => convertTargetNodes.has(node.type),
+        }
+      : null;
   }
   if (query === "*") {
     return {

@@ -8,6 +8,7 @@ import * as jsoncParser from "jsonc-eslint-parser";
 async function lintWithRule(
   baseRule: { create: (context: Rule.RuleContext) => object },
   code: string,
+  options?: { errorWithJson?: boolean },
 ) {
   const rule = {
     ...baseRule,
@@ -47,6 +48,13 @@ async function lintWithRule(
     overrideConfigFile: true,
   });
   const [result] = await eslint2.lintText(code);
+  if (options?.errorWithJson) {
+    assert.deepStrictEqual(
+      result.messages.map((m) => ({ ruleId: m.ruleId, fatal: m.fatal })),
+      [{ ruleId: null, fatal: true }],
+    );
+    return result1;
+  }
   assert.deepStrictEqual(result1.messages, result.messages);
   return result;
 }
@@ -335,10 +343,10 @@ describe("toCompatCreate", () => {
         },
       },
       `[
-         1,
-         {},
-         [ 2, 3 ]
-       ]`,
+        1,
+        {},
+        [ 2, 3 ]
+      ]`,
     );
 
     assert.deepStrictEqual(
@@ -350,6 +358,57 @@ describe("toCompatCreate", () => {
         "JSONLiteral on *.elements",
         "JSONLiteral on *.elements",
       ],
+    );
+  });
+
+  it("should listen to the JSONBinaryExpression correctly.", async () => {
+    const result = await lintWithRule(
+      {
+        create: (context: Rule.RuleContext) => {
+          return {
+            JSONBinaryExpression(node: AST.JSONNode) {
+              context.report({
+                loc: node.loc,
+                message: `${node.type} on JSONBinaryExpression`,
+              });
+            },
+          };
+        },
+      },
+      `[
+        1+2
+      ]`,
+      { errorWithJson: true },
+    );
+
+    assert.deepStrictEqual(
+      result.messages.map((m) => m.message),
+      ["JSONBinaryExpression on JSONBinaryExpression"],
+    );
+  });
+
+  it("should listen to the JSONBinaryExpression correctly. take2", async () => {
+    const result = await lintWithRule(
+      {
+        create: (context: Rule.RuleContext) => {
+          return {
+            JSONBinaryExpression(node: AST.JSONNode) {
+              context.report({
+                loc: node.loc,
+                message: `${node.type} on JSONBinaryExpression`,
+              });
+            },
+          };
+        },
+      },
+      `[
+        12
+      ]`,
+    );
+
+    assert.deepStrictEqual(
+      result.messages.map((m) => m.message),
+      [],
     );
   });
 });
