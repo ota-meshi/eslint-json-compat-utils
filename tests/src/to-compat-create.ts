@@ -19,7 +19,7 @@ describe("toCompatCreate", () => {
                     JSONArrayExpression(node: AST.JSONArrayExpression) {
                       context.report({
                         loc: node.loc,
-                        message: node?.type,
+                        message: `${node?.type} on JSONArrayExpression`,
                       });
                     },
                     JSONObjectExpression(node: AST.JSONObjectExpression) {
@@ -28,7 +28,14 @@ describe("toCompatCreate", () => {
                       )!;
                       context.report({
                         loc: token.loc,
-                        message: token?.value,
+                        message: `${JSON.stringify(token.value)} on JSONObjectExpression`,
+                      });
+                    },
+                    "Program:exit"(node: AST.JSONProgram) {
+                      const expr = node.body[0].expression;
+                      context.report({
+                        loc: expr.loc,
+                        message: `${expr.type} on Program:exit`,
                       });
                     },
                   };
@@ -52,10 +59,13 @@ describe("toCompatCreate", () => {
       })),
       [
         {
-          message: "JSONArrayExpression",
+          message: "JSONArrayExpression on JSONArrayExpression",
         },
         {
-          message: "{",
+          message: "JSONArrayExpression on Program:exit",
+        },
+        {
+          message: '"{" on JSONObjectExpression',
         },
       ],
     );

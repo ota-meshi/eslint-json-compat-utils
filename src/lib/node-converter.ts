@@ -12,7 +12,7 @@ type NodeConvertMap = {
     | AST.JSONNumberLiteral
     | [AST.JSONUnaryExpression, AST.JSONNumberLiteral];
   String: AST.JSONStringLiteral;
-  Document: AST.JSONProgram;
+  Document: [AST.JSONProgram, AST.JSONExpressionStatement];
   Object: AST.JSONObjectExpression;
   Member: AST.JSONProperty;
   Identifier: AST.JSONIdentifier;
@@ -168,15 +168,16 @@ export function getNodeConverter(
         loc: convertSourceLocationFromJsonToJsonc(node.loc),
       };
     },
-    Document(node): AST.JSONProgram {
-      let body, tokens, comments;
-      return {
+    Document(node): [AST.JSONProgram, AST.JSONExpressionStatement] {
+      let expression, tokens, comments;
+      const program: AST.JSONProgram = {
         get parent() {
           return getParent(node) as AST.JSONProgram["parent"];
         },
         type: "Program",
         get body() {
-          return (body ??= [convertNode(node.body)]);
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define -- OK
+          return body;
         },
         get comments() {
           return (comments ??= node
@@ -197,6 +198,18 @@ export function getNodeConverter(
         range: node.range!,
         loc: convertSourceLocationFromJsonToJsonc(node.loc),
       };
+      const expr: AST.JSONExpressionStatement = {
+        parent: program,
+        type: "JSONExpressionStatement",
+        get expression() {
+          return (expression ??= convertNode(node.body));
+        },
+        range: node.body.range!,
+        loc: convertSourceLocationFromJsonToJsonc(node.body.loc),
+      };
+      const body: AST.JSONProgram["body"] = [expr];
+
+      return [program, expr];
     },
     Object(node) {
       let members;
@@ -353,7 +366,7 @@ export function getNodeConverter(
     }
     const convertedParent = convertNode(parentNode);
     if (Array.isArray(convertedParent)) {
-      return convertedParent[0];
+      return convertedParent[1];
     }
     return convertedParent;
   }
