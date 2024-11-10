@@ -1,5 +1,15 @@
 # eslint-json-compat-utils
 
+## 0.2.0
+
+### Minor Changes
+
+- feat: support complex query ([#12](https://github.com/ota-meshi/eslint-json-compat-utils/pull/12))
+
+### Patch Changes
+
+- fix: JSONExpressionStatement visitor doesn't work ([#10](https://github.com/ota-meshi/eslint-json-compat-utils/pull/10))
+
 ## 0.1.3
 
 ### Patch Changes
