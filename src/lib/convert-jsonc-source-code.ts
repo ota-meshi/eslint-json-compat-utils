@@ -13,7 +13,7 @@ export function convertJsoncSourceCode(
   const convert = getNodeConverter(jsonSourceCode);
   const jsSourceCode = new SourceCode({
     text: jsonSourceCode.text,
-    ast: convert(jsonSourceCode.ast) as any,
+    ast: convert(jsonSourceCode.ast)[0] as any,
     parserServices: { isJSON: true },
     visitorKeys: VisitorKeys,
   });
