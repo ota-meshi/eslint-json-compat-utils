@@ -1,26 +1,43 @@
 import assert from "assert";
 import json from "@eslint/json";
 import { toCompatCreate } from "../../src/to-compat-create";
-
 import { ESLint, type Rule } from "eslint";
 import type { AST } from "jsonc-eslint-parser";
+import * as jsoncParser from "jsonc-eslint-parser";
 
 async function lintWithRule(
-  rule: { create: (context: Rule.RuleContext) => object },
+  baseRule: { create: (context: Rule.RuleContext) => object },
   code: string,
 ) {
-  const eslint = new ESLint({
+  const rule = {
+    ...baseRule,
+    create: toCompatCreate(baseRule.create),
+  };
+  const plugin = {
+    rules: {
+      test: rule,
+    },
+  };
+  const eslint1 = new ESLint({
+    overrideConfig: {
+      plugins: {
+        test: plugin,
+      } as any,
+      languageOptions: {
+        parser: jsoncParser,
+      },
+      rules: {
+        "test/test": "error",
+      },
+    },
+    overrideConfigFile: true,
+  });
+  const [result1] = await eslint1.lintText(code);
+  const eslint2 = new ESLint({
     overrideConfig: {
       plugins: {
         json,
-        test: {
-          rules: {
-            test: {
-              ...rule,
-              create: toCompatCreate(rule.create),
-            },
-          },
-        },
+        test: plugin,
       } as any,
       language: "json/json5",
       rules: {
@@ -29,7 +46,8 @@ async function lintWithRule(
     },
     overrideConfigFile: true,
   });
-  const [result] = await eslint.lintText(code);
+  const [result] = await eslint2.lintText(code);
+  assert.deepStrictEqual(result1.messages, result.messages);
   return result;
 }
 
@@ -110,6 +128,35 @@ describe("toCompatCreate", () => {
     assert.deepStrictEqual(
       result.messages.map((m) => m.message),
       ["JSONExpressionStatement on JSONExpressionStatement"],
+    );
+  });
+
+  it("should listen to the * selector correctly.", async () => {
+    const result = await lintWithRule(
+      {
+        create: (context: Rule.RuleContext) => {
+          return {
+            "*"(node: AST.JSONNode) {
+              context.report({
+                loc: node.loc,
+                message: `${node.type} on *`,
+              });
+            },
+          };
+        },
+      },
+      "[1,{}]",
+    );
+
+    assert.deepStrictEqual(
+      result.messages.map((m) => m.message),
+      [
+        "Program on *",
+        "JSONExpressionStatement on *",
+        "JSONArrayExpression on *",
+        "JSONLiteral on *",
+        "JSONObjectExpression on *",
+      ],
     );
   });
 
@@ -269,6 +316,39 @@ describe("toCompatCreate", () => {
         '{"key":{"type":"JSONLiteral","value":"c"},"value":{"type":"JSONLiteral","value":"d"},"parent":"JSONObjectExpression"} on JSONProperty',
         '{"key":{"type":"JSONIdentifier","name":"e"},"value":{"type":"JSONLiteral","value":"f"},"parent":"JSONObjectExpression"} on JSONProperty',
         '{"name":"e","parent":"JSONProperty"} on JSONIdentifier',
+      ],
+    );
+  });
+
+  it("should listen to the * selector correctly.", async () => {
+    const result = await lintWithRule(
+      {
+        create: (context: Rule.RuleContext) => {
+          return {
+            "*.elements"(node: AST.JSONNode) {
+              context.report({
+                loc: node.loc,
+                message: `${node.type} on *.elements`,
+              });
+            },
+          };
+        },
+      },
+      `[
+         1,
+         {},
+         [ 2, 3 ]
+       ]`,
+    );
+
+    assert.deepStrictEqual(
+      result.messages.map((m) => m.message),
+      [
+        "JSONLiteral on *.elements",
+        "JSONObjectExpression on *.elements",
+        "JSONArrayExpression on *.elements",
+        "JSONLiteral on *.elements",
+        "JSONLiteral on *.elements",
       ],
     );
   });

@@ -1,10 +1,8 @@
-import type {
+import type { AnyNode } from "@humanwhocodes/momoa";
+export type {
   Token as MomoaToken,
-  DocumentNode,
-  AnyNode,
+  DocumentNode as MomoaDocument,
 } from "@humanwhocodes/momoa";
-export type MomoaDocument = DocumentNode;
-export type { MomoaToken };
 export type MomoaNode = AnyNode;
 type MomoaRuleFunction<Node extends MomoaNode = never> = (node: Node) => void;
 type MomoaBuiltInRuleListeners = {

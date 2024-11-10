@@ -1,91 +1,62 @@
 import type { JSONSourceCode } from "@eslint/json";
-import type { AST, RuleListener } from "jsonc-eslint-parser";
+import type { AST, RuleFunction, RuleListener } from "jsonc-eslint-parser";
 import type { TargetMomoaNode } from "./lib/node-converter";
 import { getNodeConverter } from "./lib/node-converter";
-import type { MomoaNode, MomoaRuleListener } from "./lib/momoa";
+import type { MomoaNode } from "./lib/momoa";
 import { isMomoaNode } from "./lib/checker";
+import { convertQuery } from "./lib/query-converter";
 
 /**
  * This is a helper function that converts the given listener into a listener that can also listen to `@eslint/json` nodes.
  */
 export function toCompatRuleListener(
-  listener: RuleListener,
+  ruleListener: RuleListener,
   jsonSourceCode: JSONSourceCode,
 ): RuleListener {
   const convert = getNodeConverter(jsonSourceCode);
-  const listenerKeysSet = new Set<keyof MomoaRuleListener>();
-  for (const [jsonKey, momoaKeys] of [
-    ["Program", ["Document"]],
-    ["JSONExpressionStatement", ["Document"]],
-    ["JSONLiteral", ["Boolean", "String", "Null", "Number"]],
-    ["JSONArrayExpression", ["Array"]],
-    ["JSONObjectExpression", ["Object"]],
-    ["JSONProperty", ["Member"]],
-    ["JSONIdentifier", ["Identifier", "Infinity", "NaN"]],
-    ["JSONUnaryExpression", ["Number", "Infinity", "NaN"]],
-  ] as const) {
-    if (listener[jsonKey]) {
-      for (const momoaKey of momoaKeys) {
-        listenerKeysSet.add(momoaKey);
-      }
+
+  const jsoncNodeVisitors = new Map<string, RuleFunction[]>();
+  const queries = new Set<string>();
+
+  for (const [key, fn] of Object.entries(ruleListener)) {
+    if (!fn) continue;
+    queries.add(key);
+    const { query, match } = convertQuery(key);
+    queries.add(query);
+    let jsoncNodeVisitorList = jsoncNodeVisitors.get(query);
+    if (!jsoncNodeVisitorList) {
+      jsoncNodeVisitorList = [];
+      jsoncNodeVisitors.set(query, jsoncNodeVisitorList);
     }
-    if (listener[`${jsonKey}:exit`]) {
-      for (const momoaKey of momoaKeys) {
-        listenerKeysSet.add(`${momoaKey}:exit`);
+    jsoncNodeVisitorList.push((node) => {
+      if (match(node)) {
+        fn(node);
       }
-    }
+    });
   }
 
-  const result: RuleListener = Object.fromEntries(
-    [...listenerKeysSet].map((key) => {
-      const dispatchListener = key.endsWith(":exit") ? dispatchExit : dispatch;
-      return [key, dispatchListener];
-    }),
-  );
+  const result: RuleListener = {};
 
-  for (const [key, fn] of Object.entries(listener)) {
-    if (!fn) continue;
-
-    const newFn = (node: AST.JSONNode | MomoaNode, ...args: []) => {
+  for (const query of queries) {
+    result[query] = (node: AST.JSONNode | MomoaNode) => {
       if (isMomoaNode(node)) {
         if (node.type !== "Element") {
-          const invoke = key.endsWith(":exit")
+          const jsoncNodeVisitorList = jsoncNodeVisitors.get(query);
+          if (!jsoncNodeVisitorList) return;
+          const invoke = query.endsWith(":exit")
             ? invokeWithReverseConvertedNode
             : invokeWithConvertedNode;
-          invoke(node, (n) => fn(n as never, ...args));
+          invoke(node, (n) => {
+            jsoncNodeVisitorList.forEach((cb) => cb(n as never));
+          });
         }
       } else {
-        fn(node as never, ...args);
+        ruleListener[query]?.(node as never);
       }
     };
-
-    const momoaFn = result[key];
-    if (momoaFn) {
-      result[key] = (...args) => {
-        momoaFn(...args);
-        newFn(...args);
-      };
-    } else {
-      result[key] = newFn;
-    }
   }
+
   return result;
-
-  /**
-   * Dispatch the given node to the listener.
-   */
-  function dispatch(node: TargetMomoaNode) {
-    invokeWithConvertedNode(node, (n) => listener[n.type]?.(n as never));
-  }
-
-  /**
-   * Dispatch the given node to the exit listener.
-   */
-  function dispatchExit(node: TargetMomoaNode) {
-    invokeWithReverseConvertedNode(node, (n) =>
-      listener[`${n.type}:exit`]?.(n as never),
-    );
-  }
 
   /**
    * Invoke the given callback with the converted node.
