@@ -16,7 +16,7 @@ export function toCompatRuleListener(
   const listenerKeysSet = new Set<keyof MomoaRuleListener>();
   for (const [jsonKey, momoaKeys] of [
     ["Program", ["Document"]],
-    ["Program", ["Document"]],
+    ["JSONExpressionStatement", ["Document"]],
     ["JSONLiteral", ["Boolean", "String", "Null", "Number"]],
     ["JSONArrayExpression", ["Array"]],
     ["JSONObjectExpression", ["Object"]],
