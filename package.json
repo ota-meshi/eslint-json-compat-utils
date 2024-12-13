@@ -90,6 +90,6 @@
     "prettier": "^3.0.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0",
-    "unbuild": "^2.0.0"
+    "unbuild": "^3.0.0"
   }
 }
