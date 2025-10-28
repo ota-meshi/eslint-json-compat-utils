@@ -70,7 +70,7 @@
     "@types/eslint": "^9.0.0",
     "@types/esquery": "^1.5.4",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
