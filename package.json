@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.2",
-    "@eslint/js": "^9.14.0",
+    "@eslint/js": "^10.0.0",
     "@eslint/json": "^1.0.0",
     "@ota-meshi/eslint-plugin": "^0.20.0",
     "@svitejs/changesets-changelog-github-compact": "^1.1.0",
@@ -75,7 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^8.13.0",
     "@typescript-eslint/parser": "^8.13.0",
     "esbuild-register": "^3.5.0",
-    "eslint": "^9.14.0",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-jsdoc": "^62.0.0",
     "eslint-plugin-json-schema-validator": "^6.0.0",
