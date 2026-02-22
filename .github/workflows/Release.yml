@@ -5,13 +5,19 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+# Allow one concurrent deployment
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
+    # prevents this action from running on forks
+    if: github.repository == 'ota-meshi/eslint-json-compat-utils'
+    permissions:
+      id-token: write # Required for OIDC
+      contents: write # to create release (changesets/action)
+      pull-requests: write # to create pull request (changesets/action)
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -22,16 +28,15 @@ jobs:
           fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
       - name: Install Dependencies
-        run: npm i -f
+        run: npm install -f
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
           publish: npm run release
-          commit: "chore: release eslint-json-compat-utils"
-          title: "chore: release eslint-json-compat-utils"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
