@@ -1,5 +1,11 @@
 # eslint-json-compat-utils
 
+## 0.2.2
+
+### Patch Changes
+
+- fix: update peer dependency jsonc-eslint-parser to support version 3.0.0 ([#54](https://github.com/ota-meshi/eslint-json-compat-utils/pull/54))
+
 ## 0.2.1
 
 ### Patch Changes
