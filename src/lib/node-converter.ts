@@ -395,7 +395,7 @@ export function getNodeConverter(
   function getParent(node: MomoaNode): AST.JSONNode | null {
     const parent = jsonSourceCode.getParent(node);
     if (!parent) return null;
-    const parentNode = parent as MomoaNode;
+    const parentNode = parent;
     if (parentNode.type === "Element") {
       // There is no jsonc-eslint-parser node that corresponds to the Element node.
       return getParent(parentNode);
