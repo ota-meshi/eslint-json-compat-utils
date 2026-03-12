@@ -1,5 +1,11 @@
 # eslint-json-compat-utils
 
+## 0.2.3
+
+### Patch Changes
+
+- fix: wrong node conversion for the minus number nodes ([#59](https://github.com/ota-meshi/eslint-json-compat-utils/pull/59))
+
 ## 0.2.2
 
 ### Patch Changes
