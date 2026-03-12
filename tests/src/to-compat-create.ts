@@ -411,4 +411,64 @@ describe("toCompatCreate", () => {
       [],
     );
   });
+
+  describe("should convert all nodes correctly", () => {
+    type TestCase = {
+      code: string;
+    };
+    for (const test of [
+      { code: `{"a": 1}` },
+      { code: `{"a": -1}` },
+      { code: `{"a": +1}` },
+      { code: `[1, 2, 3]` },
+      { code: `[-1, +2, 3]` },
+    ] as TestCase[]) {
+      it(`should convert ${JSON.stringify(test.code)} correctly`, async () => {
+        await lintWithRule(
+          {
+            create: (context: Rule.RuleContext) => {
+              return {
+                Program(node: AST.JSONProgram) {
+                  context.report({
+                    loc: node.loc,
+                    message: stringify(node),
+                  });
+                },
+              };
+
+              function stringify(obj: unknown): string {
+                if (typeof obj !== "object" || obj === null) {
+                  return JSON.stringify(obj);
+                }
+                if (Array.isArray(obj)) {
+                  return `[${obj.map(stringify).join(",")}]`;
+                }
+                const props = [];
+                for (const [key, value] of Object.entries(obj).sort(
+                  ([a], [b]) => a.localeCompare(b),
+                )) {
+                  if (
+                    key === "parent" ||
+                    key === "start" ||
+                    key === "end" ||
+                    key === "range" ||
+                    key === "loc"
+                  ) {
+                    continue;
+                  }
+                  // Ignore some JSONLiteral specific properties
+                  if (key === "bigint" || key === "regex") {
+                    continue;
+                  }
+                  props.push(`${JSON.stringify(key)}:${stringify(value)}`);
+                }
+                return `{${props.join(",")}}`;
+              }
+            },
+          },
+          test.code,
+        );
+      });
+    }
+  });
 });
