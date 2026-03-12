@@ -8,20 +8,14 @@ type NodeConvertMap = {
   Array: AST.JSONArrayExpression;
   Boolean: AST.JSONKeywordLiteral;
   Null: AST.JSONKeywordLiteral;
-  Number:
-    | AST.JSONNumberLiteral
-    | [AST.JSONUnaryExpression, AST.JSONNumberLiteral];
+  Number: AST.JSONNumberLiteral | AST.JSONUnaryExpression;
   String: AST.JSONStringLiteral;
-  Document: [AST.JSONProgram, AST.JSONExpressionStatement];
+  Document: AST.JSONProgram | AST.JSONExpressionStatement;
   Object: AST.JSONObjectExpression;
   Member: AST.JSONProperty;
   Identifier: AST.JSONIdentifier;
-  Infinity:
-    | AST.JSONNumberIdentifier
-    | [AST.JSONUnaryExpression, AST.JSONNumberIdentifier];
-  NaN:
-    | AST.JSONNumberIdentifier
-    | [AST.JSONUnaryExpression, AST.JSONNumberIdentifier];
+  Infinity: AST.JSONNumberIdentifier | AST.JSONUnaryExpression;
+  NaN: AST.JSONNumberIdentifier | AST.JSONUnaryExpression;
 };
 
 export type TargetMomoaNode = Extract<
@@ -30,7 +24,10 @@ export type TargetMomoaNode = Extract<
 >;
 export type NodeConverter = <N extends TargetMomoaNode>(
   node: N,
-) => NodeConvertMap[N["type"]];
+) => {
+  node: NodeConvertMap[N["type"]];
+  nodes?: NodeConvertMap[N["type"]][];
+};
 
 const NODE_CONVERTERS = new WeakMap<MomoaDocument, NodeConverter>();
 /**
@@ -44,12 +41,15 @@ export function getNodeConverter(
     return converter;
   }
   const tokenConverter = getTokenConverter(jsonSourceCode);
-  const convertedNodes = new Map<MomoaNode, AST.JSONNode | AST.JSONNode[]>();
+  const convertedNodes = new Map<
+    MomoaNode,
+    { node: AST.JSONNode; nodes?: AST.JSONNode[] }
+  >();
 
   const nodeConverters: {
     [Node in TargetMomoaNode as Node["type"]]: (
       node: Node,
-    ) => NodeConvertMap[Node["type"]];
+    ) => NodeConvertMap[Node["type"]] | NodeConvertMap[Node["type"]][];
   } = {
     Array(node) {
       let elements;
@@ -350,8 +350,44 @@ export function getNodeConverter(
       };
     },
   };
-  NODE_CONVERTERS.set(jsonSourceCode.ast, convertNode as NodeConverter);
-  return convertNode as NodeConverter;
+  NODE_CONVERTERS.set(jsonSourceCode.ast, convert as NodeConverter);
+  return convert as NodeConverter;
+
+  /**
+   * Convert the given momoa node to a JSONC Node information
+   */
+  function convert<T extends AST.JSONNode>(
+    node: TargetMomoaNode,
+  ): {
+    node: T;
+    nodes?: T[];
+  } {
+    if (convertedNodes.has(node)) {
+      return convertedNodes.get(node)! as {
+        node: T;
+        nodes?: T[];
+      };
+    }
+
+    const newNode = nodeConverters[node.type](node as never);
+
+    let result: {
+      node: T;
+      nodes?: T[];
+    };
+    if (Array.isArray(newNode)) {
+      convertedNodes.set(
+        node,
+        (result = {
+          node: newNode[0] as T,
+          nodes: newNode as T[],
+        }),
+      );
+    } else {
+      convertedNodes.set(node, (result = { node: newNode as T }));
+    }
+    return result;
+  }
 
   /**
    * Get the parent node of the given node.
@@ -364,23 +400,17 @@ export function getNodeConverter(
       // There is no jsonc-eslint-parser node that corresponds to the Element node.
       return getParent(parentNode);
     }
-    const convertedParent = convertNode(parentNode);
-    if (Array.isArray(convertedParent)) {
-      return convertedParent[1];
+    const convertedParent = convert(parentNode);
+    if (convertedParent.nodes) {
+      return convertedParent.nodes[convertedParent.nodes.length - 1];
     }
-    return convertedParent;
+    return convertedParent.node;
   }
 
   /**
    * Convert the given momoa node to a JSONC node.
    */
-  function convertNode<T extends AST.JSONNode>(node: TargetMomoaNode): T | T[] {
-    if (convertedNodes.has(node)) {
-      return convertedNodes.get(node)! as T | T[];
-    }
-
-    const newNode = nodeConverters[node.type](node as never);
-    convertedNodes.set(node, newNode as never);
-    return newNode as T | T[];
+  function convertNode<T extends AST.JSONNode>(node: TargetMomoaNode): T {
+    return convert<T>(node).node;
   }
 }

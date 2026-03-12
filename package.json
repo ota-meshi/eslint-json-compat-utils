@@ -26,6 +26,7 @@
     "lint": "npm-run-all \"lint:*\"",
     "lint:js": "eslint .",
     "eslint-fix": "eslint . --fix",
+    "lint:ts": "tsc --noEmit",
     "test:cover": "nyc --reporter=lcov npm run test",
     "test": "npm run mocha -- \"tests/src/**/*.ts\" --reporter dot --timeout 60000",
     "ts": "node -r esbuild-register",

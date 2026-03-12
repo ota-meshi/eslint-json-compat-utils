@@ -67,13 +67,13 @@ export function toCompatRuleListener(
     node: TargetMomoaNode,
     cb: (node: AST.JSONNode) => void,
   ) {
-    const jsonNode = convert(node);
-    if (Array.isArray(jsonNode)) {
-      for (const n of jsonNode) {
+    const jsonNodeData = convert(node);
+    if (jsonNodeData.nodes) {
+      for (const n of jsonNodeData.nodes) {
         cb(n);
       }
     } else {
-      cb(jsonNode);
+      cb(jsonNodeData.node);
     }
   }
 
@@ -84,14 +84,14 @@ export function toCompatRuleListener(
     node: TargetMomoaNode,
     cb: (node: AST.JSONNode) => void,
   ) {
-    const jsonNode = convert(node);
-    if (Array.isArray(jsonNode)) {
-      for (let index = jsonNode.length - 1; index >= 0; index--) {
-        const n = jsonNode[index];
+    const jsonNodeData = convert(node);
+    if (jsonNodeData.nodes) {
+      for (let index = jsonNodeData.nodes.length - 1; index >= 0; index--) {
+        const n = jsonNodeData.nodes[index];
         cb(n);
       }
     } else {
-      cb(jsonNode);
+      cb(jsonNodeData.node);
     }
   }
 }
