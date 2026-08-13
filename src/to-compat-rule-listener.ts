@@ -49,11 +49,11 @@ export function toCompatRuleListener(
             ? invokeWithReverseConvertedNode
             : invokeWithConvertedNode;
           invoke(node, (n) => {
-            jsoncNodeVisitorList.forEach((cb) => cb(n as never));
+            jsoncNodeVisitorList.forEach((cb) => cb(n));
           });
         }
       } else {
-        ruleListener[query]?.(node as never);
+        ruleListener[query]?.(node);
       }
     };
   }

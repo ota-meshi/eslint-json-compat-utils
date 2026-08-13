@@ -63,7 +63,7 @@ export function toCompatCreate<F extends LazyCreate>(create: F): F {
     });
 
     return toCompatRuleListener(
-      create(compatContext as never, ...args) as RuleListener,
+      create(compatContext, ...args) as RuleListener,
       originalSourceCode,
     );
   };
