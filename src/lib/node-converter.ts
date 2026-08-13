@@ -350,8 +350,8 @@ export function getNodeConverter(
       };
     },
   };
-  NODE_CONVERTERS.set(jsonSourceCode.ast, convert as NodeConverter);
-  return convert as NodeConverter;
+  NODE_CONVERTERS.set(jsonSourceCode.ast, convert);
+  return convert;
 
   /**
    * Convert the given momoa node to a JSONC Node information
